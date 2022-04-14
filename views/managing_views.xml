@@ -1,0 +1,112 @@
+<?xml version="1.0"?>
+<odoo>
+    <template id="crm_2optin_template_capture_lead">
+        <div>[capture_lead]</div>
+    </template>
+
+    <record id="crm_2optin_action_leads" model="ir.actions.act_window">
+        <field name="name">Manage Captured Leads</field>
+        <field name="res_model">crm.2optin.leads</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <record id="crm_2optin_leads_view_tree" model="ir.ui.view">
+        <field name="name">crm.2optin.leads.tree</field>
+        <field name="model">crm.2optin.leads</field>
+        <field name="arch" type="xml">
+            <tree string="List CRM Double-Optin-Leads">
+                <field name="name"/>
+                <field name="email"/>
+                <field name="until"/>
+                <field name="phone_number"/>
+                <!-- field name="postal_address"/ -->
+            </tree>
+        </field>
+    </record>
+
+    <record id="crm_2optin_leads_view_form" model="ir.ui.view">
+        <field name="name">crm.2optin.leads.form</field>
+        <field name="model">crm.2optin.leads</field>
+        <field name="arch" type="xml">
+            <form string="Form CRM Double-Optin-Leads">
+                <sheet>
+                    <h1><field name="name"/></h1>
+                    <separator/>
+                    <group>
+                        <field name="email"/>
+                        <field name="until"/>
+                        <field name="config_id"/>
+                        <field name="capture_phone_number"/>
+                        <field name="capture_postal_address"/>
+                        <field name="phone_number"/>
+                        <field name="street1"/>
+                        <field name="street2"/>
+                        <field name="zip"/>
+                        <field name="city"/>
+                        <field name="state_id"/>
+                        <field name="country_id"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+     </record>
+
+    <record id="crm_2optin_action_configs" model="ir.actions.act_window">
+        <field name="name">Configure Lead-Capture</field>
+        <field name="res_model">crm.2optin.configs</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <record id="crm_2optin_configs_view_tree" model="ir.ui.view">
+        <field name="name">crm.2optin.configs.tree</field>
+        <field name="model">crm.2optin.configs</field>
+        <field name="arch" type="xml">
+            <tree string="List CRM Double-Optin-Configs">
+                <field name="name"/>
+                <field name="has_phone_number"/>
+                <field name="has_postal_address"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="crm_2optin_configs_view_form" model="ir.ui.view">
+        <field name="name">crm.2optin.configs.form</field>
+        <field name="model">crm.2optin.configs</field>
+        <field name="arch" type="xml">
+            <form string="Form CRM Double-Optin-Configs">
+                <sheet>
+                    <p><field name="uuid"/></p>
+                    <h1><field name="name"/></h1>
+                    <separator/>
+                    <group>
+                        <field name="has_phone_number"/>
+                        <field name="has_postal_address"/>
+                        <field name="smtp_server_ids"/>
+                        <field name="email_from"/>
+                        <field name="email_subject"/>
+                        <field name="email_body"/>
+                        <field name="email_autodelete"/>
+                        <field name="until_days"/>
+                        <field name="placeholder_name"/>
+                        <field name="placeholder_email"/>
+                        <field name="placeholder_phone_number"/>
+                        <field name="placeholder_street1"/>
+                        <field name="placeholder_street2"/>
+                        <field name="placeholder_zip"/>
+                        <field name="placeholder_city"/>
+                        <field name="label_submit"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+     </record>
+
+    <menuitem id="crm_2optin_menu_root" name="CRM Dpouble-Opt-In Leads">
+        <menuitem id="crm_2optin_menu_manage" name="Manage Collected Leads">
+            <menuitem id="crm_2optin_menu_leads" action="crm_2optin_action_leads"/>
+        </menuitem>
+        <menuitem id="crm_2optin_menu_settings" name="Settings">
+            <menuitem id="crm_2optin_menu_configs" action="crm_2optin_action_configs"/>
+        </menuitem>
+    </menuitem>
+</odoo>
