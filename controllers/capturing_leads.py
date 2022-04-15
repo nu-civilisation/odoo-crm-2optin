@@ -2,42 +2,28 @@
 # Developed by nu-civilisation. See LICENSE file for full copyright and licensing details.
 
 import uuid
+import urllib.parse
 from datetime import datetime
 from odoo import fields
 from odoo import http
 from dateutil.relativedelta import relativedelta
 from ..views.capturing_htmls import Crm2optinCapturingHtmls
-# full python path is: odoo.addons.happiness_profile.models.happiness_profile_testqas
+# full python path is: odoo.addons.crm_2optin.models.happiness_profile_testqas
 
 
 class CapturingLeadsController(http.Controller):
 
     @http.route(route="/crm/2optin/form/<uuid:config_uuid>", type="http", auth="public", methods=["GET"], csrf=False, website=True)
-    def renderCaptureLeads(self, config_uuid, **kwargs):
+    def renderCaptureLead(self, config_uuid, **kwargs):
         # TODO it is a good idea to provide an url check, from where this capture lead is called ... like for vimeo iframes
         configs = http.request.env["crm.2optin.configs"].sudo().search(args=[("uuid", "=", config_uuid)])
         content = ""
         for config in configs:
-            params = {}
-            country_id = http.request.params.get("country_id")
-            if country_id:
-                # The capured lead has not passed the constraints check:
-                params = {
-                    "name": http.request.params.get("name"),
-                    "email": http.request.params.get("email"),
-                    "phone_number": http.request.params.get("phone_number"),
-                    "street1": http.request.params.get("street1"),
-                    "street2": http.request.params.get("street2"),
-                    "zip": http.request.params.get("zip"),
-                    "city": http.request.params.get("city"),
-                    "state_id": http.request.params.get("state_id"),
-                    "country_id": country_id
-                }
-            htmltext = Crm2optinCapturingHtmls.renderCapturingLeadHtml(config, params)
+            htmltext = Crm2optinCapturingHtmls.renderCapturingLeadHtml(config, http.request.params)
             content = str(http.request.render("crm_2optin.crm_2optin_template_capture_lead", lazy=False))
             # ...Deliberately set lazy rendering to false; this ensures, that the string is rendererd immediately.
             content = content.replace("[capture_lead]", htmltext)
-            # ...Apply the generated HTML-test in the shortcode "[capture_lead]".
+            # ...Apply the generated HTML-text in the shortcode "[capture_lead]".
 
         return content
 
@@ -74,26 +60,27 @@ class CapturingLeadsController(http.Controller):
             if err:
                 # Redirect to the form again to fix the error(s):
                 urlquery = []
-                urlquery.append("?err=" + err)
+                urlquery.append("?err=" + urllib.parse.quote(err, safe=""))
                 if name:
-                    urlquery.append("&name=" + name)
+                    urlquery.append("&name=" + urllib.parse.quote(name, safe=""))
                 if email:
-                    urlquery.append("&email" + email)
+                    urlquery.append("&email=" + urllib.parse.quote(email, safe=""))
                 if phone_number:
-                    urlquery.append("&phone_number=" + phone_number)
+                    urlquery.append("&phone_number=" + urllib.parse.quote(phone_number, safe=""))
                 if street1:
-                    urlquery.append("&street1=" + street1)
+                    urlquery.append("&street1=" + urllib.parse.quote(street1, safe=""))
                 if street2:
-                    urlquery.append("&street2=" + street2)
+                    urlquery.append("&street2=" + urllib.parse.quote(street2, safe=""))
                 if zip:
-                    urlquery.append("&zip=" + zip)
+                    urlquery.append("&zip=" + urllib.parse.quote(zip, safe=""))
                 if city:
-                    urlquery.append("&city=" + city)
+                    urlquery.append("&city=" + urllib.parse.quote(city, safe=""))
                 if state_id:
                     urlquery.append("&state_id=" + state_id)
                 if country_id:
                     urlquery.append("&country_id=" + country_id)
-                return http.request.redirect(http.request.httprequest.full_path + ''.join(urlquery))
+                redirectUrl = http.request.httprequest.host_url + "crm/2optin/form/" + str(config.uuid) + ''.join(urlquery)
+                return http.request.redirect(redirectUrl)
             else:
                 # Store the values in the DB:
                 values = {
@@ -133,28 +120,82 @@ class CapturingLeadsController(http.Controller):
                     # ...Sends the e-mail as multipart automatically creating an alternative text message from the HTML message.
 
                 # Redirect to the thank-you page:
-                return http.request.redirect(http.request.httprequest.host_url + "crm/2optin/thankyou/" + str(config_uuid))
+                return http.request.redirect(http.request.httprequest.host_url + "crm/2optin/token/" + str(config_uuid))
+        return http.request.render('website.404')
+        # ...When the config UUID wasn't found, then redirect to HTTP 404.
 
-    @http.route(route="/crm/2optin/thankyou/<uuid:config_uuid>", type="http", auth="public", methods=["GET"], csrf=False, website=True)
-    def renderThankYou(self, config_uuid, **kwargs):
-        # TODO it is a good idea to provide an url check, from where this capture lead is called ... like for vimeo iframes
+    @http.route(route="/crm/2optin/token/<uuid:config_uuid>", type="http", auth="public", methods=["GET"], csrf=False, website=True)
+    def renderEnterToken(self, config_uuid, **kwargs):
+        # TODO it is a good idea to provide an url check, from where this senter token is called ... like for vimeo iframes
+        content = ""
         configs = http.request.env["crm.2optin.configs"].sudo().search(args=[("uuid", "=", config_uuid)])
         for config in configs:
-            return "Thank you!"
+            htmltext = Crm2optinCapturingHtmls.renderEnterTokenHtml(config, http.request.params)
+            content = str(http.request.render("crm_2optin.crm_2optin_template_enter_token", lazy=False))
+            # ...Deliberately set lazy rendering to false; this ensures, that the string is rendererd immediately.
+            content = content.replace("[enter_token]", htmltext)
+            # ...Apply the generated HTML-text in the shortcode "[enter_token]".
+
+        return content
+
+    @http.route(route="/crm/2optin/token/<uuid:config_uuid>", type="http", auth="public", methods=["POST"], csrf=False, website=True)
+    def processEnterToken(self, config_uuid, **kwargs):
+        configs = http.request.env["crm.2optin.configs"].sudo().search(args=[("uuid", "=", config_uuid)])
+        for config in configs:
+            token = kwargs.get("token")
+            lead_ids = http.request.env["crm.2optin.leads"].sudo().search(args=[("token_uuid", "=", token)])
+            for lead_id in lead_ids:
+                return http.request.redirect(http.request.httprequest.host_url + "crm/2optin/confirm/" + str(token))
+                # ...Redirect to the confirmation page.
+            redirectUrl = http.request.httprequest.host_url + "crm/2optin/token/" + str(config.uuid) + '?err=' + token
+            return http.request.redirect(redirectUrl)
+            # ...Redirect to the current page.
+        return http.request.render('website.404')
+        # ...When the config UUID wasn't found, then redirect to HTTP 404.
 
     @http.route(route="/crm/2optin/confirm/<uuid:token_uuid>", type="http", auth="public", methods=["GET"], csrf=False, website=True)
     def renderConfirmation(self, token_uuid, **kwargs):
-        return "HI THERE !!!"
         # TODO it is a good idea to provide an url check, from where this capture lead is called ... like for vimeo iframes
-        # leads = http.request.env["crm.2optin.leads"].sudo().search(args=[("token_uuid", "=", token_uuid)])
-        # for lead in leads:
-        #     return "Confirmation!"
-        # return "No token UUID found."
+        lead_ids = http.request.env["crm.2optin.leads"].sudo().search(args=[("token_uuid", "=", token_uuid)])
+        for lead_id in lead_ids:
+            values = {
+                "name": lead_id.name,
+                "email": lead_id.email,
+            }
+            if lead_id.phone_number:
+                values["phone"] = lead_id.phone_number
+            if lead_id.street1:
+                values["street"] = lead_id.street1
+            if lead_id.street2:
+                values["street2"] = lead_id.street2
+            if lead_id.zip:
+                values["zip"] = lead_id.zip
+            if lead_id.city:
+                values["city"] = lead_id.city
+            if lead_id.state_id:
+                values["state_id"] = lead_id.state_id.id
+            if lead_id.country_id:
+                values["country_id"] = int(lead_id.country_id.id)
+            http.request.env["res.partner"].sudo().create([values])
+            # ...Create the new partner as contact.
+
+            lead_id.sudo().unlink()
+            # ...The lead has done it's task -- now delete it, since it is not used any more.
+
+            today = datetime.now().date()
+            today_str = datetime.strftime(today, "%Y-%m-%d 00:00:00")
+            lead_ids = http.request.env["crm.2optin.leads"].sudo().search([("until", "<", today_str)])
+            for lead_id in lead_ids:
+                lead_id.sudo().unlink()
+                # ...For sanity, delete all leads, which have passed the current day.
+
+            return "Confirmation!"
+        return "No token UUID found."
 
     def _applyPlaceholders(self, content, lead, config):
         content = content.replace("[name]", lead.name)
         content = content.replace("[email]", lead.email)
-        content = content.replace("[until]", lead.until.strftime('%Y-%m-%d'))
+        content = content.replace("[until]", lead.until.strftime("%Y-%m-%d"))
         if config.has_phone_number and lead.phone_number:
             if lead.phone_number:
                 content = content.replace("[phone_number]", lead.phone_number)

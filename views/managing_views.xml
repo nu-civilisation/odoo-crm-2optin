@@ -4,6 +4,10 @@
         <div>[capture_lead]</div>
     </template>
 
+    <template id="crm_2optin_template_enter_token">
+        <div>[enter_token]</div>
+    </template>
+
     <record id="crm_2optin_action_leads" model="ir.actions.act_window">
         <field name="name">Manage Captured Leads</field>
         <field name="res_model">crm.2optin.leads</field>
@@ -94,7 +98,9 @@
                         <field name="placeholder_street2"/>
                         <field name="placeholder_zip"/>
                         <field name="placeholder_city"/>
-                        <field name="label_submit"/>
+                        <field name="label_submit_capture"/>
+                        <field name="placeholder_token"/>
+                        <field name="label_submit_token"/>
                     </group>
                 </sheet>
             </form>

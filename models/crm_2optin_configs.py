@@ -30,7 +30,9 @@ class Crm2optinConfigs(models.Model):
     placeholder_street2 = fields.Char(string="Placeholder Street Line #2", translate=True)
     placeholder_zip = fields.Char(string="Placeholder ZIP", translate=True)
     placeholder_city = fields.Char(string="Placeholder City", translate=True)
-    label_submit = fields.Char(string="Label Submit", translate=True)
+    label_submit_capture = fields.Char(string="Label Submit", translate=True)
+    placeholder_token = fields.Char(string="Placeholder Token", translate=True)
+    label_submit_token = fields.Char(string="Label Submit", translate=True)
 
     @api.constrains("until_days")
     def _check_until_days(self):
